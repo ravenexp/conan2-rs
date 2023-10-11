@@ -1,0 +1,17 @@
+name: Publish crates
+
+on:
+  push:
+    tags: [ v* ]
+
+env:
+  CARGO_REGISTRY_TOKEN: ${{ secrets.CRATES_IO_TOKEN }}
+
+jobs:
+  publish-crate:
+    name: Publish to crates.io
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Run cargo publish
+      run: cargo publish
