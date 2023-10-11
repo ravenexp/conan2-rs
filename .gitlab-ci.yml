@@ -1,0 +1,43 @@
+include:
+  - project: "devops/support"
+    ref: master
+    file:
+      - "includes/build/rust/crates-io-mirror.yml"
+      - "includes/docs/rustdoc.yml"
+
+default:
+    tags:
+      - linux-docker
+    image: ${PLG_CI_DOCKER_TAG}/rusty-python:latest
+
+stages:
+  - check
+  - build
+  - test
+  - deploy
+
+fmt:
+    stage: check
+    script:
+      - cargo fmt -- --check
+
+clippy:
+    stage: check
+    script:
+      - cargo clippy -- --deny warnings
+      - cargo clippy --tests -- --deny warnings
+
+compile:
+    stage: build
+    script:
+      - cargo build --verbose
+
+package:
+    stage: build
+    script:
+      - cargo package
+
+runtests:
+    stage: test
+    script:
+      - cargo test --verbose -- --test-threads=1

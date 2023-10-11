@@ -1,2 +1,7 @@
+# Rust stuff
+/target/
 /Cargo.lock
-/target
+
+# GitLab CI stuff
+/.cargo/
+/cargo/
