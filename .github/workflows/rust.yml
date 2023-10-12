@@ -17,6 +17,13 @@ jobs:
     - uses: actions/checkout@v3
     - name: Build
       run: cargo build --verbose
+    - name: Install Conan
+      id: conan
+      uses: turtlebrowser/get-conan@v1.2
+    - name: Conan version
+      run: echo "${{ steps.conan.outputs.version }}"
+    - name: Conan profile init
+      run: conan profile detect
     - name: Run tests
       run: cargo test --verbose -- --test-threads=1
   fmt:
