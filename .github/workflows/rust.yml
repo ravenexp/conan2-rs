@@ -26,6 +26,10 @@ jobs:
       run: conan profile detect
     - name: Run tests
       run: cargo test --verbose -- --test-threads=1
+    - name: Test build the example crates
+      run: cargo build -p example-build-script -vv
+    - name: Test run the build script example
+      run: cargo run -p example-build-script
   fmt:
     name: Check code formatting
     runs-on: ubuntu-latest

@@ -1,0 +1,8 @@
+[package]
+name = "example-build-script"
+description = "A working example of using Conan dependencies with conan2-rs"
+version = "0.1.0"
+edition = "2021"
+
+[build-dependencies]
+conan2 = { path = "../" }

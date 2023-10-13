@@ -43,6 +43,9 @@ fn main() {
 The Conan executable is assumed to be named `conan` unless
 the `CONAN` environment variable is set to override.
 
+An example Rust crate using `conan2-rs` to link Conan dependencies
+can also be found in the project repository.
+
 ## Advanced usage
 
 Using custom Conan profiles with names derived from the Cargo target information:
