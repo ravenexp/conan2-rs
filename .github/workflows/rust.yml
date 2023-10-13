@@ -27,7 +27,9 @@ jobs:
     - name: Run tests
       run: cargo test --verbose -- --test-threads=1
     - name: Test build the example crates
-      run: cargo build -p example-build-script -vv
+      run: |
+        cargo build -p example-build-script -vv
+        cargo build -p example-build-script -vv --release
     - name: Test run the build script example
       run: cargo run -p example-build-script
   fmt:

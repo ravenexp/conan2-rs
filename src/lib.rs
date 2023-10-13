@@ -38,6 +38,9 @@
 //! ConanInstall::new().run().parse().emit();
 //! ```
 //!
+//! The most commonly used `build_type` Conan setting will be defined automatically
+//! depending on the current Cargo build profile: Debug or Release.
+//!
 //! The Conan executable is assumed to be named `conan` unless
 //! the `CONAN` environment variable is set to override.
 //!
@@ -181,11 +184,34 @@ impl ConanInstall {
             command.arg(build);
         }
 
+        // Use additional environment variables set by Cargo.
+        Self::add_settings_from_env(&mut command);
+
         let output = command
             .output()
             .expect("failed to run the Conan executable");
 
         ConanOutput(output)
+    }
+
+    /// Adds automatic Conan settings arguments derived
+    /// from the environment variables set by Cargo.
+    ///
+    /// The following Conan settings are auto-detected and set:
+    ///
+    /// - `build_type`
+    fn add_settings_from_env(command: &mut Command) {
+        match std::env::var("PROFILE").as_deref() {
+            Ok("debug") => {
+                command.arg("-s");
+                command.arg("build_type=Debug");
+            }
+            Ok("release") => {
+                command.arg("-s");
+                command.arg("build_type=Release");
+            }
+            _ => (),
+        }
     }
 }
 

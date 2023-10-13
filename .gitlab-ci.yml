@@ -42,4 +42,5 @@ runtests:
     script:
       - cargo test --verbose -- --test-threads=1
       - cargo build -p example-build-script -vv
+      - cargo build -p example-build-script -vv --release
       - cargo run -p example-build-script

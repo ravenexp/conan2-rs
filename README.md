@@ -40,6 +40,9 @@ fn main() {
 }
 ```
 
+The most commonly used `build_type` Conan setting will be defined automatically
+depending on the current Cargo build profile: Debug or Release.
+
 The Conan executable is assumed to be named `conan` unless
 the `CONAN` environment variable is set to override.
 
