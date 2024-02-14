@@ -65,6 +65,7 @@
 
 #![deny(missing_docs)]
 
+use std::collections::BTreeSet;
 use std::io::{BufRead, Cursor, Write};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
@@ -97,7 +98,12 @@ pub struct ConanInstall {
 pub struct ConanOutput(Output);
 
 /// Build script instructions for Cargo
-pub struct CargoInstructions(Vec<u8>);
+pub struct CargoInstructions {
+    /// Raw build script output
+    out: Vec<u8>,
+    /// C include paths collected from the packages
+    includes: BTreeSet<PathBuf>,
+}
 
 /// Conan dependency graph as a JSON-based tree structure
 struct ConanDependencyGraph(Value);
@@ -304,32 +310,47 @@ impl CargoInstructions {
     /// Gets the Cargo instruction lines as bytes.
     #[must_use]
     pub fn as_bytes(&self) -> &[u8] {
-        &self.0
+        &self.out
+    }
+
+    /// Gets the C/C++ include directory paths for all dependencies.
+    #[must_use]
+    pub fn include_paths(&self) -> Vec<PathBuf> {
+        self.includes.iter().cloned().collect()
     }
 
     /// Creates a new empty Cargo instructions list.
     fn new() -> CargoInstructions {
-        CargoInstructions(Vec::with_capacity(1024))
+        CargoInstructions {
+            out: Vec::with_capacity(1024),
+            includes: BTreeSet::new(),
+        }
     }
 
     /// Adds `cargo:warning={message}` instruction.
     fn warning(&mut self, message: &str) {
-        writeln!(self.0, "cargo:warning={message}").unwrap();
+        writeln!(self.out, "cargo:warning={message}").unwrap();
     }
 
     /// Adds `cargo:rerun-if-env-changed={val}` instruction.
     fn rerun_if_env_changed(&mut self, val: &str) {
-        writeln!(self.0, "cargo:rerun-if-env-changed={val}").unwrap();
+        writeln!(self.out, "cargo:rerun-if-env-changed={val}").unwrap();
     }
 
     /// Adds `cargo:rustc-link-lib={lib}` instruction.
     fn rustc_link_lib(&mut self, lib: &str) {
-        writeln!(self.0, "cargo:rustc-link-lib={lib}").unwrap();
+        writeln!(self.out, "cargo:rustc-link-lib={lib}").unwrap();
     }
 
     /// Adds `cargo:rustc-link-search={path}` instruction.
     fn rustc_link_search(&mut self, path: &str) {
-        writeln!(self.0, "cargo:rustc-link-search={path}").unwrap();
+        writeln!(self.out, "cargo:rustc-link-search={path}").unwrap();
+    }
+
+    /// Adds `cargo:include={path}` instruction.
+    fn include(&mut self, path: &str) {
+        writeln!(self.out, "cargo:include={path}").unwrap();
+        self.includes.insert(path.into());
     }
 }
 
@@ -411,7 +432,16 @@ impl ConanDependencyGraph {
             }
         };
 
-        // 4. Recursively visit dependency component requirements.
+        // 4. Emit "cargo:include=DIR" metadata for Rust dependencies.
+        if let Some(Value::Array(includedirs)) = component.get("includedirs") {
+            for include in includedirs {
+                if let Value::String(include) = include {
+                    cargo.include(include);
+                }
+            }
+        };
+
+        // 5. Recursively visit dependency component requirements.
         if let Some(Value::Array(requires)) = component.get("requires") {
             for requirement in requires {
                 if let Value::String(req_comp_name) = requirement {
