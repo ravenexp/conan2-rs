@@ -19,7 +19,12 @@ fn run_conan_install() {
     assert!(output.is_success());
     assert_eq!(output.status_code(), 0);
 
-    output.parse().emit();
+    let cargo = output.parse();
+    let includes = cargo.include_paths();
+
+    assert!(includes.len() > 3);
+
+    cargo.emit();
 }
 
 #[test]
