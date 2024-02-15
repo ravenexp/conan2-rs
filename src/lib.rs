@@ -62,6 +62,23 @@
 //!     .parse()
 //!     .emit();
 //! ```
+//!
+//! ## Getting C/C++ include paths from Conan dependencies
+//!
+//! To use the list of include paths, do the following after
+//! parsing the `conan install` output:
+//!
+//! ```no_run
+//! use conan2::ConanInstall;
+//!
+//! let metadata = ConanInstall::new().run().parse();
+//!
+//! for path in metadata.include_paths() {
+//!     // Add "-I{path}" to CXXFLAGS or something.
+//! }
+//!
+//! metadata.emit();
+//! ```
 
 #![deny(missing_docs)]
 
