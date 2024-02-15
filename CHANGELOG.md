@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.1] - 2024-02-15
+
+### Documentation
+
+- Add C/C++ include paths use examples
+
+### Features
+
+- Collect C/C++ include directories from deps
+
 ## [0.1.0] - 2023-10-13
 
 ### CI Configuration
