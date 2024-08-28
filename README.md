@@ -64,6 +64,7 @@ fn main() {
 
     ConanInstall::new()
         .profile(&conan_profile)
+        .detect_profile() // Auto-detect if the profile does not exist
         .build("missing")
         .verbosity(ConanVerbosity::Error) // Silence Conan warnings
         .run()
