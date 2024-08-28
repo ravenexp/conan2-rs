@@ -51,10 +51,11 @@ can also be found in the project repository.
 
 ## Advanced usage
 
-Using custom Conan profiles with names derived from the Cargo target information:
+Using custom Conan profiles with names derived from the Cargo target information
+and a reduced output verbosity level:
 
 ```rust
-use conan2::ConanInstall;
+use conan2::{ConanInstall, ConanVerbosity};
 
 fn main() {
     let target_os = std::env::var("CARGO_CFG_TARGET_OS").unwrap();
@@ -64,6 +65,7 @@ fn main() {
     ConanInstall::new()
         .profile(&conan_profile)
         .build("missing")
+        .verbosity(ConanVerbosity::Error) // Silence Conan warnings
         .run()
         .parse()
         .emit();

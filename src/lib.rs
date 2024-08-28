@@ -46,10 +46,11 @@
 //!
 //! ## Advanced usage
 //!
-//! Using custom Conan profiles with names derived from the Cargo target information:
+//! Using custom Conan profiles with names derived from the Cargo target information
+//! and a reduced output verbosity level:
 //!
 //! ```no_run
-//! use conan2::ConanInstall;
+//! use conan2::{ConanInstall, ConanVerbosity};
 //!
 //! let target_os = std::env::var("CARGO_CFG_TARGET_OS").unwrap();
 //! let target_arch = std::env::var("CARGO_CFG_TARGET_ARCH").unwrap();
@@ -58,6 +59,7 @@
 //! ConanInstall::new()
 //!     .profile(&conan_profile)
 //!     .build("missing")
+//!     .verbosity(ConanVerbosity::Error) // Silence Conan warnings
 //!     .run()
 //!     .parse()
 //!     .emit();
@@ -95,6 +97,34 @@ const CONAN_ENV: &str = "CONAN";
 /// Default Conan binary name
 const DEFAULT_CONAN: &str = "conan";
 
+/// `conan` command verbosity level
+///
+/// Defines the level of detail of the Conan command output.
+///
+/// Enum variants correspond to the following options:
+/// `-vquiet`, `-verror`, `-vwarning`, `-vnotice`, `-vstatus`,
+/// `-v` or `-vverbose`, `-vv` or `-vdebug`, `-vvv` or `-vtrace`.
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+pub enum ConanVerbosity {
+    /// `-vquiet`
+    Quiet,
+    /// `-verror`
+    Error,
+    /// `-vwarning`
+    #[default]
+    Warning,
+    /// `-vnotice`
+    Notice,
+    /// `-vstatus`
+    Status,
+    /// `-vverbose`
+    Verbose,
+    /// `-vdebug`
+    Debug,
+    /// `-vtrace`
+    Trace,
+}
+
 /// `conan install` command builder
 ///
 /// This opaque type implements a command line builder for
@@ -109,6 +139,8 @@ pub struct ConanInstall {
     profile: Option<String>,
     /// Conan build policy
     build: Option<String>,
+    /// Conan output verbosity level
+    verbosity: ConanVerbosity,
 }
 
 /// `conan install` command output data
@@ -124,6 +156,21 @@ pub struct CargoInstructions {
 
 /// Conan dependency graph as a JSON-based tree structure
 struct ConanDependencyGraph(Value);
+
+impl std::fmt::Display for ConanVerbosity {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ConanVerbosity::Quiet => f.write_str("quiet"),
+            ConanVerbosity::Error => f.write_str("error"),
+            ConanVerbosity::Warning => f.write_str("warning"),
+            ConanVerbosity::Notice => f.write_str("notice"),
+            ConanVerbosity::Status => f.write_str("status"),
+            ConanVerbosity::Verbose => f.write_str("verbose"),
+            ConanVerbosity::Debug => f.write_str("debug"),
+            ConanVerbosity::Trace => f.write_str("trace"),
+        }
+    }
+}
 
 impl ConanInstall {
     /// Creates a new `conan install` command with the default recipe path (`.`).
@@ -170,6 +217,14 @@ impl ConanInstall {
         self
     }
 
+    /// Sets the Conan command verbosity level.
+    ///
+    /// Matches `-v` Conan executable option.
+    pub fn verbosity(&mut self, verbosity: ConanVerbosity) -> &mut ConanInstall {
+        self.verbosity = verbosity;
+        self
+    }
+
     /// Runs the `conan install` command and captures its JSON-formatted output.
     ///
     /// # Panics
@@ -191,7 +246,7 @@ impl ConanInstall {
         command
             .arg("install")
             .arg(recipe)
-            .arg("-vwarning")
+            .arg(format!("-v{}", self.verbosity))
             .arg("--format")
             .arg("json")
             .arg("--output-folder")
