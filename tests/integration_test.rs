@@ -8,6 +8,7 @@ use conan2::{ConanInstall, ConanVerbosity};
 fn run_conan_install() {
     let output = ConanInstall::with_recipe(Path::new("tests/conanfile.txt"))
         .output_folder(Path::new(env!("CARGO_TARGET_TMPDIR")))
+        .detect_profile() // Auto-detect "default" profile if not exists
         .verbosity(ConanVerbosity::Verbose)
         .build("missing")
         .run();
@@ -59,4 +60,18 @@ fn fail_no_profile() {
     assert_eq!(output.status_code(), 1);
     assert_eq!(output.stdout().len(), 0);
     assert!(output.stderr().starts_with(b"ERROR: Profile not found: "));
+}
+
+#[test]
+fn detect_custom_profile() {
+    let output = ConanInstall::with_recipe(Path::new("tests/conanfile.txt"))
+        .output_folder(Path::new(env!("CARGO_TARGET_TMPDIR")))
+        .profile(&format!("{}-dynamic-profile", env!("CARGO_PKG_NAME")))
+        .detect_profile()
+        .build("missing")
+        .verbosity(ConanVerbosity::Debug)
+        .run();
+
+    std::io::stderr().write_all(output.stderr()).unwrap();
+    assert!(output.is_success());
 }

@@ -58,6 +58,7 @@
 //!
 //! ConanInstall::new()
 //!     .profile(&conan_profile)
+//!     .detect_profile() // Auto-detect if the profile does not exist
 //!     .build("missing")
 //!     .verbosity(ConanVerbosity::Error) // Silence Conan warnings
 //!     .run()
@@ -85,6 +86,7 @@
 #![deny(missing_docs)]
 
 use std::collections::BTreeSet;
+use std::ffi::OsStr;
 use std::io::{BufRead, Cursor, Write};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
@@ -137,6 +139,8 @@ pub struct ConanInstall {
     recipe_path: Option<PathBuf>,
     /// Conan profile name
     profile: Option<String>,
+    /// Conan profile auto-detection flag
+    new_profile: bool,
     /// Conan build policy
     build: Option<String>,
     /// Conan output verbosity level
@@ -209,6 +213,14 @@ impl ConanInstall {
         self
     }
 
+    /// Auto-detects and creates the Conan profile to use for installing dependencies.
+    ///
+    /// Schedules `conan profile detect --exist-ok` to run before running `conan install`.
+    pub fn detect_profile(&mut self) -> &mut ConanInstall {
+        self.new_profile = true;
+        self
+    }
+
     /// Sets the Conan dependency build policy for `conan install`.
     ///
     /// Matches `--build` Conan executable option.
@@ -242,6 +254,10 @@ impl ConanInstall {
                 .into(),
         };
 
+        if self.new_profile {
+            Self::run_profile_detect(&conan, self.profile.as_deref());
+        }
+
         let mut command = Command::new(conan);
         command
             .arg("install")
@@ -270,6 +286,24 @@ impl ConanInstall {
             .expect("failed to run the Conan executable");
 
         ConanOutput(output)
+    }
+
+    /// Creates a new profile with `conan profile detect` if required.
+    fn run_profile_detect(conan: &OsStr, profile: Option<&str>) {
+        let mut command = Command::new(conan);
+        command.arg("profile").arg("detect").arg("--exist-ok");
+
+        if let Some(profile) = profile {
+            command.arg("--name").arg(profile);
+        }
+
+        let status = command
+            .status()
+            .expect("failed to run the Conan executable");
+
+        if !status.success() {
+            panic!("conan profile detect command failed: {}", status);
+        }
     }
 
     /// Adds automatic Conan settings arguments derived
