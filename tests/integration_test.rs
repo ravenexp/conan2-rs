@@ -75,3 +75,18 @@ fn detect_custom_profile() {
     std::io::stderr().write_all(output.stderr()).unwrap();
     assert!(output.is_success());
 }
+
+#[test]
+fn host_and_build_profiles() {
+    let output = ConanInstall::with_recipe(Path::new("tests/conanfile.txt"))
+        .output_folder(Path::new(env!("CARGO_TARGET_TMPDIR")))
+        .host_profile(&format!("{}-dynamic-host-profile", env!("CARGO_PKG_NAME")))
+        .build_profile(&format!("{}-dynamic-build-profile", env!("CARGO_PKG_NAME")))
+        .detect_profile()
+        .build("missing")
+        .verbosity(ConanVerbosity::Debug)
+        .run();
+
+    std::io::stderr().write_all(output.stderr()).unwrap();
+    assert!(output.is_success());
+}
