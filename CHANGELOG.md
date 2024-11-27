@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.3] - 2024-11-27
+
+### 🚀 Features
+
+- Add `ConanInstall::build_profile()` method
+
+### 🚜 Refactor
+
+- Show better errors for `conan profile detect`
+
+### 📚 Documentation
+
+- Add examples for `ConanInstall::build_profile()`
+
+### 🧪 Testing
+
+- Add integration tests for `build_profile()`
+
 ## [0.1.2] - 2024-08-28
 
 ### 🚀 Features
