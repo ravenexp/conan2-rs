@@ -137,8 +137,10 @@ pub struct ConanInstall {
     output_folder: Option<PathBuf>,
     /// Conan recipe file path
     recipe_path: Option<PathBuf>,
-    /// Conan profile name
+    /// Conan host profile name
     profile: Option<String>,
+    /// Conan build profile name
+    build_profile: Option<String>,
     /// Conan profile auto-detection flag
     new_profile: bool,
     /// Conan build policy
@@ -213,6 +215,21 @@ impl ConanInstall {
         self
     }
 
+    /// Sets the Conan host profile name to use for installing dependencies.
+    ///
+    /// Matches `--profile:host` Conan executable option.
+    pub fn host_profile(&mut self, profile: &str) -> &mut ConanInstall {
+        self.profile(profile)
+    }
+
+    /// Sets the Conan build profile name to use for installing dependencies.
+    ///
+    /// Matches `--profile:build` Conan executable option.
+    pub fn build_profile(&mut self, profile: &str) -> &mut ConanInstall {
+        self.build_profile = Some(profile.to_owned());
+        self
+    }
+
     /// Auto-detects and creates the Conan profile to use for installing dependencies.
     ///
     /// Schedules `conan profile detect --exist-ok` to run before running `conan install`.
@@ -256,6 +273,10 @@ impl ConanInstall {
 
         if self.new_profile {
             Self::run_profile_detect(&conan, self.profile.as_deref());
+
+            if self.build_profile != self.profile {
+                Self::run_profile_detect(&conan, self.build_profile.as_deref());
+            };
         }
 
         let mut command = Command::new(conan);
@@ -269,8 +290,11 @@ impl ConanInstall {
             .arg(output_folder);
 
         if let Some(profile) = self.profile.as_deref() {
-            command.arg("--profile");
-            command.arg(profile);
+            command.arg("--profile:host").arg(profile);
+        }
+
+        if let Some(build_profile) = self.build_profile.as_deref() {
+            command.arg("--profile:build").arg(build_profile);
         }
 
         if let Some(build) = self.build.as_deref() {
