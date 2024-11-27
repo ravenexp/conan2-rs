@@ -350,15 +350,20 @@ impl ConanInstall {
         command.arg("profile").arg("detect").arg("--exist-ok");
 
         if let Some(profile) = profile {
+            println!("running 'conan profile detect' for profile '{profile}'");
+
             command.arg("--name").arg(profile);
+        } else {
+            println!("running 'conan profile detect' for the default profile");
         }
 
         let status = command
             .status()
             .expect("failed to run the Conan executable");
 
+        #[allow(clippy::manual_assert)]
         if !status.success() {
-            panic!("conan profile detect command failed: {}", status);
+            panic!("'conan profile detect' command failed: {status}");
         }
     }
 
