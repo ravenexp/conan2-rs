@@ -46,6 +46,8 @@
 //!
 //! ## Advanced usage
 //!
+//! ### Automatic Conan profile inference from Cargo target
+//!
 //! Using custom Conan profiles with names derived from the Cargo target information
 //! and a reduced output verbosity level:
 //!
@@ -58,7 +60,6 @@
 //!
 //! ConanInstall::new()
 //!     .profile(&conan_profile)
-//!     .detect_profile() // Auto-detect if the profile does not exist
 //!     .build("missing")
 //!     .verbosity(ConanVerbosity::Error) // Silence Conan warnings
 //!     .run()
@@ -66,7 +67,38 @@
 //!     .emit();
 //! ```
 //!
-//! ## Getting C/C++ include paths from Conan dependencies
+//! ### Automatic Conan profile creation
+//!
+//! Creating a custom default Conan profile on the fly with zero configuration:
+//!
+//! ```no_run
+//! use conan2::{ConanInstall, ConanVerbosity};
+//!
+//! ConanInstall::new()
+//!     .profile("cargo")
+//!     .detect_profile() // Run `conan profile detect --exist-ok` for the above
+//!     .run()
+//!     .parse()
+//!     .emit();
+//! ```
+//!
+//! ### Using separate host and build profiles
+//!
+//! Using different values for `--profile:host` and `--profile:build`
+//! arguments of `conan install` command:
+//!
+//! ```no_run
+//! use conan2::{ConanInstall, ConanVerbosity};
+//!
+//! ConanInstall::new()
+//!     .host_profile("cargo-host")
+//!     .build_profile("cargo-build")
+//!     .run()
+//!     .parse()
+//!     .emit();
+//! ```
+//!
+//! ### Getting C/C++ include paths from Conan dependencies
 //!
 //! To use the list of include paths, do the following after
 //! parsing the `conan install` output:
