@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.4] - 2024-11-28
+
+### 🚀 Features
+
+- Support for `exelinkflags`
+
+### 🧪 Testing
+
+- Add integration test for `exelinkflags`
+
 ## [0.1.3] - 2024-11-27
 
 ### 🚀 Features
