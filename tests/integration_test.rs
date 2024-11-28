@@ -90,3 +90,18 @@ fn host_and_build_profiles() {
     std::io::stderr().write_all(output.stderr()).unwrap();
     assert!(output.is_success());
 }
+
+#[test]
+fn test_shared_and_exe_link_flags() {
+    let output = ConanInstall::with_recipe(Path::new("tests/conanfile.txt"))
+        .output_folder(Path::new(env!("CARGO_TARGET_TMPDIR")))
+        .detect_profile()
+        .build("missing")
+        .verbosity(ConanVerbosity::Debug)
+        .run();
+
+    assert!(output.is_success());
+    let cargo = output.parse();
+    let emitted_instructions = String::from_utf8(cargo.as_bytes().to_vec()).expect("Invalid UTF-8");
+    assert!(emitted_instructions.contains("cargo:rustc-link-arg-bins=-fopenmp"));
+}
