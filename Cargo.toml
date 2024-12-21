@@ -1,6 +1,6 @@
 [package]
 name = "conan2"
-version = "0.1.4"
+version = "0.1.5"
 description = "Pulls the C/C++ library linking flags from Conan dependencies"
 authors = ["Sergey Kvachonok <ravenexp@gmail.com>"]
 edition = "2021"
