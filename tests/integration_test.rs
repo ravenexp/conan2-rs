@@ -103,5 +103,6 @@ fn test_shared_and_exe_link_flags() {
     assert!(output.is_success());
     let cargo = output.parse();
     let emitted_instructions = String::from_utf8(cargo.as_bytes().to_vec()).expect("Invalid UTF-8");
+    assert!(emitted_instructions.contains("cargo:rustc-cdylib-link-arg=-fopenmp"));
     assert!(emitted_instructions.contains("cargo:rustc-link-arg-bins=-fopenmp"));
 }
