@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.5] - 2024-12-21
+
+### 🚀 Features
+
+- Support for `sharedlinkflags`
+
+### 🧪 Testing
+
+- Add `sharedlinkflags` to integration test
+
 ## [0.1.4] - 2024-11-28
 
 ### 🚀 Features
