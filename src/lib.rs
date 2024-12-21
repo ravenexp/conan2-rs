@@ -504,7 +504,12 @@ impl CargoInstructions {
         writeln!(self.out, "cargo:rerun-if-env-changed={val}").unwrap();
     }
 
-    /// Adds `cargo:rustc-link-args-bins={val}` instruction.
+    /// Adds `cargo:rustc-cdylib-link-arg={val}` instruction.
+    fn rustc_cdylib_link_arg(&mut self, val: &str) {
+        writeln!(self.out, "cargo:rustc-cdylib-link-arg={val}").unwrap();
+    }
+
+    /// Adds `cargo:rustc-link-arg-bins={val}` instruction.
     fn rustc_link_arg_bins(&mut self, val: &str) {
         writeln!(self.out, "cargo:rustc-link-arg-bins={val}").unwrap();
     }
@@ -613,7 +618,16 @@ impl ConanDependencyGraph {
             }
         };
 
-        // 5. Emit "cargo:rustc-link-arg-bins=FLAGS" metadata for `rustc`.
+        // 5. Emit "cargo:rustc-cdylib-link-arg=FLAGS" metadata for `rustc`.
+        if let Some(Value::Array(flags)) = component.get("sharedlinkflags") {
+            for flag in flags {
+                if let Value::String(flag) = flag {
+                    cargo.rustc_cdylib_link_arg(flag);
+                }
+            }
+        }
+
+        // 6. Emit "cargo:rustc-link-arg-bins=FLAGS" metadata for `rustc`.
         if let Some(Value::Array(flags)) = component.get("exelinkflags") {
             for flag in flags {
                 if let Value::String(flag) = flag {
@@ -622,7 +636,7 @@ impl ConanDependencyGraph {
             }
         }
 
-        // 6. Recursively visit dependency component requirements.
+        // 7. Recursively visit dependency component requirements.
         if let Some(Value::Array(requires)) = component.get("requires") {
             for requirement in requires {
                 if let Value::String(req_comp_name) = requirement {
