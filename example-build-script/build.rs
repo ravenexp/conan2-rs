@@ -1,6 +1,16 @@
+use std::process::Command;
+
 use conan2::{ConanInstall, ConanVerbosity};
 
 fn main() {
+    let status = Command::new("conan")
+        .arg("create")
+        .arg("test_pkg_conanfile.py")
+        .status()
+        .expect("failed to create test package");
+
+    assert!(status.success(), "creating test package failed");
+
     ConanInstall::new()
         .host_profile("cargo-host")
         .build_profile("default")
