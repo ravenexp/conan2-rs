@@ -514,9 +514,36 @@ impl CargoInstructions {
         writeln!(self.out, "cargo:rustc-link-arg-bins={val}").unwrap();
     }
 
-    /// Adds `cargo:rustc-link-lib={lib}` instruction.
+    /// Adds `cargo:rustc-link-lib=[(dylib|static)=]{lib}` instruction.
+    ///
+    /// The library linking type (dynamic or static) may be inferred
+    /// from the file name pattern on Linux-like platforms.
     fn rustc_link_lib(&mut self, lib: &str) {
-        writeln!(self.out, "cargo:rustc-link-lib={lib}").unwrap();
+        // When the full library file name is supplied,
+        // convert `libfoo.a` and `libfoo.so` into `foo` automatically.
+        if let Some(lib) = lib.strip_prefix("lib") {
+            if let Some(lib) = lib.strip_suffix(".a") {
+                self.rustc_link_lib_kind(lib, Some("static"));
+                return;
+            } else if let Some(lib) = lib.strip_suffix(".so") {
+                self.rustc_link_lib_kind(lib, Some("dylib"));
+                return;
+            }
+        }
+
+        self.rustc_link_lib_kind(lib, None);
+    }
+
+    /// Adds `cargo:rustc-link-lib=[{kind}=]{lib}` instruction.
+    fn rustc_link_lib_kind(&mut self, lib: &str, kind: Option<&str>) {
+        match kind {
+            Some(kind) => {
+                writeln!(self.out, "cargo:rustc-link-lib={kind}={lib}").unwrap();
+            }
+            None => {
+                writeln!(self.out, "cargo:rustc-link-lib={lib}").unwrap();
+            }
+        }
     }
 
     /// Adds `cargo:rustc-link-search={path}` instruction.
