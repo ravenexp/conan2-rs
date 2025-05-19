@@ -573,30 +573,21 @@ impl ConanDependencyGraph {
             return;
         };
 
-        // Skip dependency components which provide no C/C++ libraries.
-        let Some(Value::Array(libs)) = component.get("libs") else {
-            return;
-        };
-        if libs.is_empty() {
-            return;
-        }
-
-        // Skip dependency components which provide no library paths.
-        let Some(Value::Array(libdirs)) = component.get("libdirs") else {
-            return;
-        };
-
         // 1. Emit linker search directory instructions for `rustc`.
-        for libdir in libdirs {
-            if let Value::String(libdir) = libdir {
-                cargo.rustc_link_search(libdir);
+        if let Some(Value::Array(libdirs)) = component.get("libdirs") {
+            for libdir in libdirs {
+                if let Value::String(libdir) = libdir {
+                    cargo.rustc_link_search(libdir);
+                }
             }
         }
 
         // 2. Emit library link instructions for `rustc`.
-        for lib in libs {
-            if let Value::String(lib) = lib {
-                cargo.rustc_link_lib(lib);
+        if let Some(Value::Array(libs)) = component.get("libs") {
+            for lib in libs {
+                if let Value::String(lib) = lib {
+                    cargo.rustc_link_lib(lib);
+                }
             }
         }
 
