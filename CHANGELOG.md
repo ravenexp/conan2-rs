@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.6] - 2025-05-20
+
+### 🚀 Features
+
+- Support library file names in `cpp_info.libs`
+
+### 🐛 Bug Fixes
+
+- Process header-only dependencies normally
+
+### 🧪 Testing
+
+- Update dependencies in test Conanfiles
+- Add a test case for `cpp_info.system_libs`
+
 ## [0.1.5] - 2024-12-21
 
 ### 🚀 Features
