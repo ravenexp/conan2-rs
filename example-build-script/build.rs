@@ -1,6 +1,6 @@
 use std::process::Command;
 
-use conan2::{ConanInstall, ConanVerbosity};
+use conan2::{ConanInstall, ConanScope, ConanVerbosity};
 
 fn main() {
     let status = Command::new("conan")
@@ -18,6 +18,10 @@ fn main() {
         .detect_profile()
         .build("missing")
         .verbosity(ConanVerbosity::Error) // Silence Conan warnings
+        .option(ConanScope::Global, "shared", "False")
+        .option(ConanScope::Local, "sanitizers", "True")
+        .option(ConanScope::Package("openssl"), "no_deprecated", "True")
+        .option(ConanScope::Package("libxml2/2.13.8"), "ftp", "False")
         .run()
         .parse()
         .emit();
