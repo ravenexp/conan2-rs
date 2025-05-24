@@ -52,7 +52,7 @@
 //! and a reduced output verbosity level:
 //!
 //! ```no_run
-//! use conan2::{ConanInstall, ConanVerbosity};
+//! use conan2::{ConanInstall, ConanScope, ConanVerbosity};
 //!
 //! let target_os = std::env::var("CARGO_CFG_TARGET_OS").unwrap();
 //! let target_arch = std::env::var("CARGO_CFG_TARGET_ARCH").unwrap();
@@ -63,6 +63,10 @@
 //!     .build_type("RelWithDebInfo") // Override the Cargo build profile
 //!     .build("missing")
 //!     .verbosity(ConanVerbosity::Error) // Silence Conan warnings
+//!     .option(ConanScope::Global, "shared", "True")
+//!     .option(ConanScope::Local, "power", "10")
+//!     .option(ConanScope::Package("foolib"), "frob", "max")
+//!     .option(ConanScope::Package("barlib/1.0"), "zoom", "True")
 //!     .run()
 //!     .parse()
 //!     .emit();
@@ -160,6 +164,21 @@ pub enum ConanVerbosity {
     Trace,
 }
 
+/// `conan install` command option scope kind
+///
+/// Defines the Conan install command option scope variant:
+/// local, global or per-package.
+#[derive(Debug, Default, Clone, PartialEq, Eq)]
+pub enum ConanScope<'a> {
+    /// `--options *:key=value`
+    #[default]
+    Global,
+    /// `--options &:key=value`
+    Local,
+    /// `--options package:key=value`
+    Package(&'a str),
+}
+
 /// `conan install` command builder
 ///
 /// This opaque type implements a command line builder for
@@ -181,6 +200,8 @@ pub struct ConanInstall {
     /// Conan build type setting:
     /// one of "Debug", "Release", "RelWithDebInfo" and "MinSizeRel"
     build_type: Option<String>,
+    /// Conan package build options stored as `{scope}:{key}={value}`
+    options: Vec<(String, String, String)>,
     /// Conan output verbosity level
     verbosity: ConanVerbosity,
 }
@@ -210,6 +231,24 @@ impl std::fmt::Display for ConanVerbosity {
             ConanVerbosity::Verbose => f.write_str("verbose"),
             ConanVerbosity::Debug => f.write_str("debug"),
             ConanVerbosity::Trace => f.write_str("trace"),
+        }
+    }
+}
+
+impl std::fmt::Display for ConanScope<'_> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ConanScope::Global => f.write_str("*"),
+            ConanScope::Local => f.write_str("&"),
+            ConanScope::Package(name) => {
+                if name.contains('/') {
+                    // "name/version" combination works as it is.
+                    f.write_str(name)
+                } else {
+                    // Bare package names are not accepted by Conan for some reason.
+                    write!(f, "{name}/*")
+                }
+            }
         }
     }
 }
@@ -286,6 +325,17 @@ impl ConanInstall {
         self
     }
 
+    /// Adds the Conan package options to use for installing dependencies.
+    ///
+    /// Matches `--options {scope}:{key}={value}` Conan executable option.
+    /// Can be called multiple times per Conan invocation.
+    pub fn option(&mut self, scope: ConanScope, key: &str, value: &str) -> &mut ConanInstall {
+        self.options
+            .push((scope.to_string(), key.to_owned(), value.to_owned()));
+
+        self
+    }
+
     /// Sets the Conan dependency build policy for `conan install`.
     ///
     /// Matches `--build` Conan executable option.
@@ -357,6 +407,11 @@ impl ConanInstall {
         } else {
             // Otherwise, use additional environment variables set by Cargo.
             Self::add_settings_from_env(&mut command);
+        }
+
+        for (scope, key, value) in &self.options {
+            command.arg("--options");
+            command.arg(format!("{scope}:{key}={value}"));
         }
 
         let output = command

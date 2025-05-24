@@ -2,7 +2,7 @@
 
 use std::{io::Write, path::Path};
 
-use conan2::{ConanInstall, ConanVerbosity};
+use conan2::{ConanInstall, ConanScope, ConanVerbosity};
 
 #[test]
 fn run_conan_install() {
@@ -12,6 +12,10 @@ fn run_conan_install() {
         .build_type("Release")
         .build("missing")
         .verbosity(ConanVerbosity::Verbose)
+        .option(ConanScope::Global, "shared", "True")
+        .option(ConanScope::Local, "sanitizers", "True")
+        .option(ConanScope::Package("openssl"), "no_deprecated", "True")
+        .option(ConanScope::Package("libxml2/2.13.8"), "ftp", "False")
         .run();
 
     // Fallback for test debugging
