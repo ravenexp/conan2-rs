@@ -41,7 +41,7 @@ fn main() {
 ```
 
 The most commonly used `build_type` Conan setting will be defined automatically
-depending on the current Cargo build profile: Debug or Release.
+depending on the current Cargo build profile: `debug` or `release`.
 
 The Conan executable is assumed to be named `conan` unless
 the `CONAN` environment variable is set to override.
@@ -66,6 +66,7 @@ fn main() {
 
     ConanInstall::new()
         .profile(&conan_profile)
+        .build_type("RelWithDebInfo") // Override the Cargo build profile
         .build("missing")
         .verbosity(ConanVerbosity::Error) // Silence Conan warnings
         .run()
