@@ -39,7 +39,7 @@
 //! ```
 //!
 //! The most commonly used `build_type` Conan setting will be defined automatically
-//! depending on the current Cargo build profile: Debug or Release.
+//! depending on the current Cargo build profile: `debug` or `release`.
 //!
 //! The Conan executable is assumed to be named `conan` unless
 //! the `CONAN` environment variable is set to override.
@@ -60,6 +60,7 @@
 //!
 //! ConanInstall::new()
 //!     .profile(&conan_profile)
+//!     .build_type("RelWithDebInfo") // Override the Cargo build profile
 //!     .build("missing")
 //!     .verbosity(ConanVerbosity::Error) // Silence Conan warnings
 //!     .run()
@@ -177,6 +178,9 @@ pub struct ConanInstall {
     new_profile: bool,
     /// Conan build policy
     build: Option<String>,
+    /// Conan build type setting:
+    /// one of "Debug", "Release", "RelWithDebInfo" and "MinSizeRel"
+    build_type: Option<String>,
     /// Conan output verbosity level
     verbosity: ConanVerbosity,
 }
@@ -270,6 +274,18 @@ impl ConanInstall {
         self
     }
 
+    /// Overrides the default Conan build type setting value for `conan install`.
+    ///
+    /// Matches `--settings build_type={value}` Conan executable option.
+    ///
+    /// NOTE: The default value for this setting will be inferred automatically
+    ///       depending on the current Cargo build profile as either
+    ///       `"Debug"` or `"Release"`.
+    pub fn build_type(&mut self, build_type: &str) -> &mut ConanInstall {
+        self.build_type = Some(build_type.to_owned());
+        self
+    }
+
     /// Sets the Conan dependency build policy for `conan install`.
     ///
     /// Matches `--build` Conan executable option.
@@ -334,8 +350,14 @@ impl ConanInstall {
             command.arg(build);
         }
 
-        // Use additional environment variables set by Cargo.
-        Self::add_settings_from_env(&mut command);
+        if let Some(build_type) = self.build_type.as_deref() {
+            // Prefer the user-provided build setting values.
+            command.arg("--settings");
+            command.arg(format!("build_type={build_type}"));
+        } else {
+            // Otherwise, use additional environment variables set by Cargo.
+            Self::add_settings_from_env(&mut command);
+        }
 
         let output = command
             .output()

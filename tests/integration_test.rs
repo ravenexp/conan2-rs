@@ -9,8 +9,9 @@ fn run_conan_install() {
     let output = ConanInstall::with_recipe(Path::new("tests/conanfile.txt"))
         .output_folder(Path::new(env!("CARGO_TARGET_TMPDIR")))
         .detect_profile() // Auto-detect "default" profile if not exists
-        .verbosity(ConanVerbosity::Verbose)
+        .build_type("Release")
         .build("missing")
+        .verbosity(ConanVerbosity::Verbose)
         .run();
 
     // Fallback for test debugging
@@ -33,6 +34,7 @@ fn run_conan_install() {
 fn fail_no_conanfile() {
     let output = ConanInstall::new()
         .output_folder(Path::new(env!("CARGO_TARGET_TMPDIR")))
+        .build_type("Debug")
         .verbosity(ConanVerbosity::Status)
         .run();
 
@@ -68,6 +70,7 @@ fn detect_custom_profile() {
         .output_folder(Path::new(env!("CARGO_TARGET_TMPDIR")))
         .profile(&format!("{}-dynamic-profile", env!("CARGO_PKG_NAME")))
         .detect_profile()
+        .build_type("RelWithDebInfo")
         .build("missing")
         .verbosity(ConanVerbosity::Debug)
         .run();
