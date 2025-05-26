@@ -677,17 +677,23 @@ impl ConanDependencyGraph {
             return;
         };
 
-        // 1. Emit linker search directory instructions for `rustc`.
-        if let Some(Value::Array(libdirs)) = component.get("libdirs") {
-            for libdir in libdirs {
-                if let Value::String(libdir) = libdir {
-                    cargo.rustc_link_search(libdir);
+        // 1. Emit packaged library link instructions for `rustc`.
+        if let Some(Value::Array(libs)) = component.get("libs") {
+            // FIXME: Many non-library Conan packages in the wild have
+            //        non-empty "libdirs" attribute arrays.
+            //        Ignore them and do not emit bogus library search paths.
+            if !libs.is_empty() {
+                // 1.1. Emit linker search directory instructions for `rustc`.
+                if let Some(Value::Array(libdirs)) = component.get("libdirs") {
+                    for libdir in libdirs {
+                        if let Value::String(libdir) = libdir {
+                            cargo.rustc_link_search(libdir);
+                        }
+                    }
                 }
             }
-        }
 
-        // 2. Emit library link instructions for `rustc`.
-        if let Some(Value::Array(libs)) = component.get("libs") {
+            // 1.2. Emit library link by name (`-lfoo`) instructions for `rustc`.
             for lib in libs {
                 if let Value::String(lib) = lib {
                     cargo.rustc_link_lib(lib);
@@ -695,7 +701,7 @@ impl ConanDependencyGraph {
             }
         }
 
-        // 3. Emit system library link instructions for `rustc`.
+        // 2. Emit system library link by name (`-lbar`) instructions for `rustc`.
         if let Some(Value::Array(system_libs)) = component.get("system_libs") {
             for system_lib in system_libs {
                 if let Value::String(system_lib) = system_lib {
@@ -704,7 +710,7 @@ impl ConanDependencyGraph {
             }
         };
 
-        // 4. Emit "cargo:include=DIR" metadata for Rust dependencies.
+        // 3. Emit `cargo:include=DIR` metadata for Rust dependencies.
         if let Some(Value::Array(includedirs)) = component.get("includedirs") {
             for include in includedirs {
                 if let Value::String(include) = include {
@@ -713,7 +719,7 @@ impl ConanDependencyGraph {
             }
         };
 
-        // 5. Emit "cargo:rustc-cdylib-link-arg=FLAGS" metadata for `rustc`.
+        // 4. Emit `cargo:rustc-cdylib-link-arg=FLAGS` metadata for `rustc`.
         if let Some(Value::Array(flags)) = component.get("sharedlinkflags") {
             for flag in flags {
                 if let Value::String(flag) = flag {
@@ -722,7 +728,7 @@ impl ConanDependencyGraph {
             }
         }
 
-        // 6. Emit "cargo:rustc-link-arg-bins=FLAGS" metadata for `rustc`.
+        // 5. Emit `cargo:rustc-link-arg-bins=FLAGS` metadata for `rustc`.
         if let Some(Value::Array(flags)) = component.get("exelinkflags") {
             for flag in flags {
                 if let Value::String(flag) = flag {
@@ -731,7 +737,7 @@ impl ConanDependencyGraph {
             }
         }
 
-        // 7. Recursively visit dependency component requirements.
+        // 6. Recursively visit dependency component requirements.
         if let Some(Value::Array(requires)) = component.get("requires") {
             for requirement in requires {
                 if let Value::String(req_comp_name) = requirement {
