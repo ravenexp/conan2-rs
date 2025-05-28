@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.7] - 2025-05-31
+
+### 🚀 Features
+
+- Add "build_type" setting configuration method
+- Add support for setting package build options
+- Add support for setting Conan config options
+
+### 🐛 Bug Fixes
+
+- Ignore bogus `libdirs` in non-library packages
+
 ## [0.1.6] - 2025-05-20
 
 ### 🚀 Features
