@@ -57,7 +57,7 @@ Using custom Conan profiles with names derived from the Cargo target information
 and a reduced output verbosity level:
 
 ```rust
-use conan2::{ConanInstall, ConanVerbosity};
+use conan2::{ConanInstall, ConanScope, ConanVerbosity};
 
 fn main() {
     let target_os = std::env::var("CARGO_CFG_TARGET_OS").unwrap();
@@ -69,6 +69,11 @@ fn main() {
         .build_type("RelWithDebInfo") // Override the Cargo build profile
         .build("missing")
         .verbosity(ConanVerbosity::Error) // Silence Conan warnings
+        .option(ConanScope::Global, "shared", "True") // Add some package options
+        .option(ConanScope::Local, "power", "10")
+        .option(ConanScope::Package("foolib"), "frob", "max")
+        .option(ConanScope::Package("barlib/1.0"), "zoom", "True")
+        .config("tools.build:skip_test", "True") // Add some Conan configs
         .run()
         .parse()
         .emit();

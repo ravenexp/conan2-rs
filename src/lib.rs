@@ -63,10 +63,11 @@
 //!     .build_type("RelWithDebInfo") // Override the Cargo build profile
 //!     .build("missing")
 //!     .verbosity(ConanVerbosity::Error) // Silence Conan warnings
-//!     .option(ConanScope::Global, "shared", "True")
+//!     .option(ConanScope::Global, "shared", "True") // Add some package options
 //!     .option(ConanScope::Local, "power", "10")
 //!     .option(ConanScope::Package("foolib"), "frob", "max")
 //!     .option(ConanScope::Package("barlib/1.0"), "zoom", "True")
+//!     .config("tools.build:skip_test", "True") // Add some Conan configs
 //!     .run()
 //!     .parse()
 //!     .emit();
@@ -200,6 +201,8 @@ pub struct ConanInstall {
     /// Conan build type setting:
     /// one of "Debug", "Release", "RelWithDebInfo" and "MinSizeRel"
     build_type: Option<String>,
+    /// Conan conf options stored as `{key}={value}`
+    confs: Vec<(String, String)>,
     /// Conan package build options stored as `{scope}:{key}={value}`
     options: Vec<(String, String, String)>,
     /// Conan output verbosity level
@@ -325,6 +328,16 @@ impl ConanInstall {
         self
     }
 
+    /// Adds the Conan configuration options (confs).
+    ///
+    /// Matches `--conf {key}={value}` Conan executable option.
+    /// Can be called multiple times per Conan invocation.
+    pub fn config(&mut self, key: &str, value: &str) -> &mut ConanInstall {
+        self.confs.push((key.to_owned(), value.to_owned()));
+
+        self
+    }
+
     /// Adds the Conan package options to use for installing dependencies.
     ///
     /// Matches `--options {scope}:{key}={value}` Conan executable option.
@@ -412,6 +425,11 @@ impl ConanInstall {
         for (scope, key, value) in &self.options {
             command.arg("--options");
             command.arg(format!("{scope}:{key}={value}"));
+        }
+
+        for (key, value) in &self.confs {
+            command.arg("--conf");
+            command.arg(format!("{key}={value}"));
         }
 
         let output = command
