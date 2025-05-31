@@ -22,6 +22,7 @@ fn main() {
         .option(ConanScope::Local, "sanitizers", "True")
         .option(ConanScope::Package("openssl"), "no_deprecated", "True")
         .option(ConanScope::Package("libxml2/2.13.8"), "ftp", "False")
+        .config("tools.build:skip_test", "True")
         .run()
         .parse()
         .emit();
