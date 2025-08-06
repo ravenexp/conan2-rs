@@ -218,6 +218,8 @@ pub struct CargoInstructions {
     out: Vec<u8>,
     /// C include paths collected from the packages
     includes: BTreeSet<PathBuf>,
+    /// C library search paths collected from the packages
+    lib_dirs: BTreeSet<PathBuf>,
 }
 
 /// Conan dependency graph as a JSON-based tree structure
@@ -581,11 +583,18 @@ impl CargoInstructions {
         self.includes.iter().cloned().collect()
     }
 
+    /// Gets the C/C++ library search directory paths for all dependencies.
+    #[must_use]
+    pub fn library_paths(&self) -> Vec<PathBuf> {
+        self.lib_dirs.iter().cloned().collect()
+    }
+
     /// Creates a new empty Cargo instructions list.
     fn new() -> CargoInstructions {
         CargoInstructions {
             out: Vec::with_capacity(1024),
             includes: BTreeSet::new(),
+            lib_dirs: BTreeSet::new(),
         }
     }
 
@@ -643,13 +652,20 @@ impl CargoInstructions {
 
     /// Adds `cargo:rustc-link-search={path}` instruction.
     fn rustc_link_search(&mut self, path: &str) {
-        writeln!(self.out, "cargo:rustc-link-search={path}").unwrap();
+        let lib_dir = path.into();
+        if !self.lib_dirs.contains(&lib_dir) {
+            writeln!(self.out, "cargo:rustc-link-search={path}").unwrap();
+            self.lib_dirs.insert(lib_dir);
+        }
     }
 
     /// Adds `cargo:include={path}` instruction.
     fn include(&mut self, path: &str) {
-        writeln!(self.out, "cargo:include={path}").unwrap();
-        self.includes.insert(path.into());
+        let include_dir = path.into();
+        if !self.includes.contains(&include_dir) {
+            writeln!(self.out, "cargo:include={path}").unwrap();
+            self.includes.insert(include_dir);
+        }
     }
 }
 
