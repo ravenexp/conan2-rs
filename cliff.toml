@@ -25,6 +25,7 @@ body = """
             {{ commit.message | upper_first }}\
     {% endfor %}
 {% endfor %}
+
 """
 
 # Template for the changelog footer
