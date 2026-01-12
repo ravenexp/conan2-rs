@@ -18,6 +18,8 @@ fn run_conan_install() {
         .option(ConanScope::Package("libxml2/2.15.0"), "programs", "False")
         .config("tools.build:skip_test", "True")
         .remote("conancenter") // The default Conan remote, just to test `--remote`
+        .arg("--core-conf")
+        .arg("core:non_interactive=True")
         .run();
 
     // Fallback for test debugging
@@ -84,6 +86,25 @@ fn fail_no_profile() {
     assert_eq!(output.status_code(), 1);
     assert_eq!(output.stdout().len(), 0);
     assert!(output.stderr().starts_with(b"ERROR: Profile not found: "));
+}
+
+#[test]
+fn fail_unknown_args() {
+    let output = ConanInstall::with_recipe(Path::new("tests/conanfile.txt"))
+        .output_folder(Path::new(env!("CARGO_TARGET_TMPDIR")))
+        .arg("--no-such-argument")
+        .verbosity(ConanVerbosity::Debug)
+        .run();
+
+    std::io::stderr().write_all(output.stderr()).unwrap();
+
+    assert!(!output.is_success());
+    assert_eq!(output.status_code(), 2);
+    assert_eq!(output.stdout().len(), 0);
+    assert!(!output.stderr().is_empty());
+    assert!(str::from_utf8(output.stderr())
+        .unwrap()
+        .contains("error: unrecognized arguments: --no-such-argument"));
 }
 
 #[test]
