@@ -68,6 +68,7 @@
 //!     .option(ConanScope::Package("foolib"), "frob", "max")
 //!     .option(ConanScope::Package("barlib/1.0"), "zoom", "True")
 //!     .config("tools.build:skip_test", "True") // Add some Conan configs
+//!     .remote("conancenter") // The default Conan remote, just to test `--remote`
 //!     .run()
 //!     .parse()
 //!     .emit();
@@ -201,6 +202,8 @@ pub struct ConanInstall {
     /// Conan build type setting:
     /// one of "Debug", "Release", "RelWithDebInfo" and "MinSizeRel"
     build_type: Option<String>,
+    /// Custom remote name
+    remote: Option<String>,
     /// Conan conf options stored as `{key}={value}`
     confs: Vec<(String, String)>,
     /// Conan package build options stored as `{scope}:{key}={value}`
@@ -330,6 +333,14 @@ impl ConanInstall {
         self
     }
 
+    /// Specifies the custom remote name for `conan install`.
+    ///
+    /// Matches `--remote` Conan executable option.
+    pub fn remote(&mut self, remote: &str) -> &mut ConanInstall {
+        self.remote = Some(remote.to_owned());
+        self
+    }
+
     /// Adds the Conan configuration options (confs).
     ///
     /// Matches `--conf {key}={value}` Conan executable option.
@@ -401,6 +412,11 @@ impl ConanInstall {
             .arg("json")
             .arg("--output-folder")
             .arg(output_folder);
+
+        if let Some(remote) = self.remote.as_deref() {
+            command.arg("--remote");
+            command.arg(remote);
+        }
 
         if let Some(profile) = self.profile.as_deref() {
             command.arg("--profile:host").arg(profile);
