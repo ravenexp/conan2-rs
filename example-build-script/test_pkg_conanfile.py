@@ -15,4 +15,4 @@ class TestSystemLibsConan(ConanFile):
     settings = "os", "compiler", "build_type", "arch"
 
     def package_info(self):
-        self.cpp_info.system_libs = ["libyaml.so", "libsqlite3.a"]
+        self.cpp_info.system_libs = ["libyaml.so", "liby.a"]

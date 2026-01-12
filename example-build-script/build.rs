@@ -21,7 +21,7 @@ fn main() {
         .option(ConanScope::Global, "shared", "False")
         .option(ConanScope::Local, "sanitizers", "True")
         .option(ConanScope::Package("openssl"), "no_deprecated", "True")
-        .option(ConanScope::Package("libxml2/2.13.8"), "ftp", "False")
+        .option(ConanScope::Package("libxml2/2.15.0"), "programs", "False")
         .config("tools.build:skip_test", "True")
         .run()
         .parse()

@@ -15,8 +15,8 @@ is to add a plain `conanfile.txt` file as follows:
 
 ```text
 [requires]
-libxml2/2.13.8
-openssl/3.4.1
+libxml2/2.15.0
+openssl/3.6.0
 zlib/1.3.1
 ```
 
