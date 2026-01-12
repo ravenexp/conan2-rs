@@ -19,8 +19,8 @@ extern "C" {
     /// libssl
     fn OPENSSL_init_ssl(opts: u64, buf: *const c_void) -> c_int;
 
-    /// libsqlite3
-    fn sqlite3_libversion() -> *const u8;
+    /// liby
+    fn yyerror(msg: *const u8) -> c_int;
 
     /// libyaml
     fn yaml_get_version_string() -> *const u8;
@@ -46,8 +46,8 @@ fn main() {
         // libssl
         OPENSSL_init_ssl(0, std::ptr::null());
 
-        // libsqlite3
-        sqlite3_libversion();
+        // liby
+        yyerror(b"yyerror()".as_ptr());
 
         // libyaml
         yaml_get_version_string();

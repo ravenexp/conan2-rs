@@ -15,7 +15,7 @@ fn run_conan_install() {
         .option(ConanScope::Global, "shared", "True")
         .option(ConanScope::Local, "sanitizers", "True")
         .option(ConanScope::Package("openssl"), "no_deprecated", "True")
-        .option(ConanScope::Package("libxml2/2.13.8"), "ftp", "False")
+        .option(ConanScope::Package("libxml2/2.15.0"), "programs", "False")
         .config("tools.build:skip_test", "True")
         .run();
 
@@ -102,6 +102,7 @@ fn host_and_build_profiles() {
 #[test]
 fn test_shared_and_exe_link_flags() {
     let output = ConanInstall::with_recipe(Path::new("tests/conanfile.txt"))
+        .option(ConanScope::Package("soxr"), "with_openmp", "True")
         .output_folder(Path::new(env!("CARGO_TARGET_TMPDIR")))
         .detect_profile()
         .build("missing")
