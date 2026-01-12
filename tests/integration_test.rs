@@ -17,6 +17,7 @@ fn run_conan_install() {
         .option(ConanScope::Package("openssl"), "no_deprecated", "True")
         .option(ConanScope::Package("libxml2/2.15.0"), "programs", "False")
         .config("tools.build:skip_test", "True")
+        .remote("conancenter") // The default Conan remote, just to test `--remote`
         .run();
 
     // Fallback for test debugging
@@ -51,6 +52,22 @@ fn fail_no_conanfile() {
     assert!(output
         .stderr()
         .starts_with(b"ERROR: Conanfile not found at"));
+}
+
+#[test]
+fn fail_no_remote() {
+    let output = ConanInstall::with_recipe(Path::new("tests/conanfile.txt"))
+        .output_folder(Path::new(env!("CARGO_TARGET_TMPDIR")))
+        .remote("no-such-remote")
+        .verbosity(ConanVerbosity::Debug)
+        .run();
+
+    std::io::stderr().write_all(output.stderr()).unwrap();
+
+    assert!(!output.is_success());
+    assert_eq!(output.status_code(), 1);
+    assert_eq!(output.stdout().len(), 0);
+    assert!(output.stderr().starts_with(b"ERROR: Remote '"));
 }
 
 #[test]
