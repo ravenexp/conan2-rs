@@ -75,6 +75,8 @@ fn main() {
         .option(ConanScope::Package("barlib/1.0"), "zoom", "True")
         .config("tools.build:skip_test", "True") // Add some Conan configs
         .remote("conancenter") // The default Conan remote, just to test `--remote`
+        .arg("--core-conf")
+        .arg("core:non_interactive=True")
         .run()
         .parse()
         .emit();

@@ -69,6 +69,8 @@
 //!     .option(ConanScope::Package("barlib/1.0"), "zoom", "True")
 //!     .config("tools.build:skip_test", "True") // Add some Conan configs
 //!     .remote("conancenter") // The default Conan remote, just to test `--remote`
+//!     .arg("--core-conf")
+//!     .arg("core:non_interactive=True")
 //!     .run()
 //!     .parse()
 //!     .emit();
@@ -210,6 +212,8 @@ pub struct ConanInstall {
     options: Vec<(String, String, String)>,
     /// Conan output verbosity level
     verbosity: ConanVerbosity,
+    /// Extra `conan install` arguments
+    extra_args: Vec<String>,
 }
 
 /// `conan install` command output data
@@ -378,6 +382,15 @@ impl ConanInstall {
         self
     }
 
+    /// Adds one extra command line argument to the final `conan install` run.
+    ///
+    /// Can be called multiple times per Conan invocation.
+    /// This method is a proxy for [`std::process::Command::arg()`].
+    pub fn arg(&mut self, arg: &str) -> &mut ConanInstall {
+        self.extra_args.push(arg.to_owned());
+        self
+    }
+
     /// Runs the `conan install` command and captures its JSON-formatted output.
     ///
     /// # Panics
@@ -449,6 +462,10 @@ impl ConanInstall {
             command.arg("--conf");
             command.arg(format!("{key}={value}"));
         }
+
+        self.extra_args.iter().for_each(|x| {
+            command.arg(x);
+        });
 
         let output = command
             .output()
