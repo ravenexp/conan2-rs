@@ -777,7 +777,17 @@ impl ConanDependencyGraph {
             }
         };
 
-        // 3. Emit `cargo:include=DIR` metadata for Rust dependencies.
+        // 3. Emit Apple framework link instructions for `rustc`
+        //    (`cargo:rustc-link-lib=framework=foo`).
+        if let Some(Value::Array(frameworks)) = component.get("frameworks") {
+            for framework in frameworks {
+                if let Value::String(framework) = framework {
+                    cargo.rustc_link_lib_kind(framework, Some("framework"));
+                }
+            }
+        };
+
+        // 4. Emit `cargo:include=DIR` metadata for Rust dependencies.
         if let Some(Value::Array(includedirs)) = component.get("includedirs") {
             for include in includedirs {
                 if let Value::String(include) = include {
@@ -786,7 +796,7 @@ impl ConanDependencyGraph {
             }
         };
 
-        // 4. Emit `cargo:rustc-cdylib-link-arg=FLAGS` metadata for `rustc`.
+        // 5. Emit `cargo:rustc-cdylib-link-arg=FLAGS` metadata for `rustc`.
         if let Some(Value::Array(flags)) = component.get("sharedlinkflags") {
             for flag in flags {
                 if let Value::String(flag) = flag {
@@ -795,7 +805,7 @@ impl ConanDependencyGraph {
             }
         }
 
-        // 5. Emit `cargo:rustc-link-arg-bins=FLAGS` metadata for `rustc`.
+        // 6. Emit `cargo:rustc-link-arg-bins=FLAGS` metadata for `rustc`.
         if let Some(Value::Array(flags)) = component.get("exelinkflags") {
             for flag in flags {
                 if let Value::String(flag) = flag {
@@ -804,7 +814,7 @@ impl ConanDependencyGraph {
             }
         }
 
-        // 6. Recursively visit dependency component requirements.
+        // 7. Recursively visit dependency component requirements.
         if let Some(Value::Array(requires)) = component.get("requires") {
             for requirement in requires {
                 if let Value::String(req_comp_name) = requirement {
@@ -845,5 +855,65 @@ impl ConanDependencyGraph {
         } else {
             None
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Builds a minimal two-node dependency graph (root -> one package) using the same
+    /// JSON shape `conan install --format json` produces, so `ConanDependencyGraph` can
+    /// be exercised without actually invoking Conan.
+    fn single_package_graph(cpp_info_root: Value) -> Value {
+        serde_json::json!({
+            "graph": {
+                "nodes": {
+                    "0": {
+                        "dependencies": { "1": {} }
+                    },
+                    "1": {
+                        "cpp_info": { "root": cpp_info_root },
+                        "dependencies": {}
+                    }
+                }
+            }
+        })
+    }
+
+    #[test]
+    fn emits_apple_frameworks() {
+        // Shape observed in the real `opencolorio/2.5.2` Conan Center package on macOS.
+        let graph = single_package_graph(serde_json::json!({
+            "libs": ["OpenColorIO"],
+            "libdirs": ["/fake/lib"],
+            "system_libs": [],
+            "frameworks": ["Foundation", "IOKit", "ColorSync", "CoreGraphics"],
+            "includedirs": ["/fake/include"]
+        }));
+
+        let mut cargo = CargoInstructions::new();
+        ConanDependencyGraph(graph).traverse(&mut cargo);
+
+        let out = String::from_utf8(cargo.as_bytes().to_vec()).expect("Invalid UTF-8");
+        assert!(out.contains("cargo:rustc-link-lib=framework=Foundation"));
+        assert!(out.contains("cargo:rustc-link-lib=framework=IOKit"));
+        assert!(out.contains("cargo:rustc-link-lib=framework=ColorSync"));
+        assert!(out.contains("cargo:rustc-link-lib=framework=CoreGraphics"));
+        assert!(out.contains("cargo:rustc-link-lib=OpenColorIO"));
+    }
+
+    #[test]
+    fn no_frameworks_field_emits_nothing_extra() {
+        let graph = single_package_graph(serde_json::json!({
+            "libs": ["foo"],
+            "libdirs": ["/fake/lib"],
+        }));
+
+        let mut cargo = CargoInstructions::new();
+        ConanDependencyGraph(graph).traverse(&mut cargo);
+
+        let out = String::from_utf8(cargo.as_bytes().to_vec()).expect("Invalid UTF-8");
+        assert!(!out.contains("framework"));
     }
 }
