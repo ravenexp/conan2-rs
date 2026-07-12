@@ -123,6 +123,22 @@
 //!
 //! metadata.emit();
 //! ```
+//!
+//! ### Declaring requirements inline, without a conanfile.txt/py recipe
+//!
+//! For the common case of a plain list of requirements with no custom recipe
+//! logic, `requires()` can be used instead of a recipe file:
+//!
+//! ```no_run
+//! use conan2::ConanInstall;
+//!
+//! ConanInstall::new()
+//!     .requires("zlib/1.3.1")
+//!     .requires("openssl/3.6.0")
+//!     .run()
+//!     .parse()
+//!     .emit();
+//! ```
 
 #![deny(missing_docs)]
 
@@ -193,6 +209,9 @@ pub struct ConanInstall {
     output_folder: Option<PathBuf>,
     /// Conan recipe file path
     recipe_path: Option<PathBuf>,
+    /// Conan package requirements passed via `--requires`, as an alternative to
+    /// a recipe file
+    requires: Vec<String>,
     /// Conan host profile name
     profile: Option<String>,
     /// Conan build profile name
@@ -391,15 +410,38 @@ impl ConanInstall {
         self
     }
 
+    /// Adds a package requirement (`{name}/{version}`), as an alternative to a
+    /// `conanfile.txt`/`conanfile.py` recipe for the common case of a plain list
+    /// of requirements with no custom recipe logic.
+    ///
+    /// Matches the `--requires` Conan executable option.
+    /// Can be called multiple times per Conan invocation.
+    ///
+    /// Mutually exclusive with a recipe path (the default `"."` or one set via
+    /// [`ConanInstall::with_recipe()`]): Conan itself rejects combining
+    /// `--requires` with a positional recipe path argument, so [`Self::run()`]
+    /// panics if both are used together.
+    pub fn requires(&mut self, reference: &str) -> &mut ConanInstall {
+        self.requires.push(reference.to_owned());
+        self
+    }
+
     /// Runs the `conan install` command and captures its JSON-formatted output.
     ///
     /// # Panics
     ///
-    /// Panics if the Conan executable cannot be found.
+    /// Panics if the Conan executable cannot be found, or if both a recipe path
+    /// and [`ConanInstall::requires()`] entries are set (Conan itself rejects
+    /// combining `--requires` with a positional recipe path argument).
     #[must_use]
     pub fn run(&self) -> ConanOutput {
         let conan = std::env::var_os(CONAN_ENV).unwrap_or_else(|| DEFAULT_CONAN.into());
-        let recipe = self.recipe_path.as_deref().unwrap_or(Path::new("."));
+
+        assert!(
+            self.requires.is_empty() || self.recipe_path.is_none(),
+            "ConanInstall::requires() cannot be combined with a recipe path: \
+             Conan rejects --requires together with a positional recipe path argument"
+        );
 
         let output_folder = match &self.output_folder {
             Some(s) => s.clone(),
@@ -417,9 +459,18 @@ impl ConanInstall {
         }
 
         let mut command = Command::new(conan);
+        command.arg("install");
+
+        if self.requires.is_empty() {
+            let recipe = self.recipe_path.as_deref().unwrap_or(Path::new("."));
+            command.arg(recipe);
+        } else {
+            for reference in &self.requires {
+                command.arg("--requires").arg(reference);
+            }
+        }
+
         command
-            .arg("install")
-            .arg(recipe)
             .arg(format!("-v{}", self.verbosity))
             .arg("--format")
             .arg("json")

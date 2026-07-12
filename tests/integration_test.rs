@@ -39,6 +39,41 @@ fn run_conan_install() {
 }
 
 #[test]
+fn requires_without_recipe() {
+    let output = ConanInstall::new()
+        .requires("zlib/1.3.1")
+        .requires("openssl/3.6.0")
+        .output_folder(Path::new(env!("CARGO_TARGET_TMPDIR")))
+        .detect_profile()
+        .build_type("Release")
+        .build("missing")
+        .verbosity(ConanVerbosity::Verbose)
+        .run();
+
+    if !output.is_success() {
+        std::io::stderr().write_all(output.stderr()).unwrap();
+    }
+
+    assert!(output.is_success());
+    assert_eq!(output.status_code(), 0);
+
+    let cargo = output.parse();
+    let includes = cargo.include_paths();
+
+    assert!(includes.len() > 1);
+
+    cargo.emit();
+}
+
+#[test]
+#[should_panic(expected = "requires() cannot be combined with a recipe path")]
+fn requires_conflicts_with_recipe_path() {
+    let _ = ConanInstall::with_recipe(Path::new("tests/conanfile.txt"))
+        .requires("zlib/1.3.1")
+        .run();
+}
+
+#[test]
 fn fail_no_conanfile() {
     let output = ConanInstall::new()
         .output_folder(Path::new(env!("CARGO_TARGET_TMPDIR")))
